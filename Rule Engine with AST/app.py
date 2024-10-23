@@ -5,6 +5,18 @@ app = Flask(__name__)
 # Dummy database to hold rules
 rules_db = {}
 
+class Node:
+    def __init__(self, node_type, value=None, left=None, right=None):
+        self.type = node_type  # "operator" or "operand"
+        self.value = value  # e.g., ">", "AND", age, etc.
+        self.left = left  # Left child for operators
+        self.right = right  # Right child for operators
+
+    def __repr__(self):
+        if self.type == "operand":
+            return f"Operand({self.value})"
+        return f"Operator({self.value}, Left: {self.left}, Right: {self.right})"
+
 # Function to parse rule string into AST
 def create_rule(rule_string):
     # For simplicity, assume the rule string is parsed into an AST manually here
@@ -60,5 +72,9 @@ def evaluate_rule_api(rule_id):
     result = evaluate_rule(rule_ast, user_data)
     return jsonify({"result": result})
 
+# @app.route("/")
+# def home():
+#     return  "Hello, World!"
+
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=False)
