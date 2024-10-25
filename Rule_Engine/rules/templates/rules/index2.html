@@ -1,0 +1,51 @@
+<!-- rules/templates/rules/index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rule Engine</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        #ast-output {
+            margin-top: 20px;
+            border: 1px solid #ccc;
+            padding: 10px;
+            background-color: #f9f9f9;
+        }
+    </style>
+</head>
+<body>
+    <h1>Rule Engine</h1>
+    <div>
+        <h2>Create Rule</h2>
+        <input type="text" id="rule-input" placeholder="Enter rule (e.g., A AND B OR C)">
+        <button id="create-rule-btn">Create Rule</button>
+    </div>
+    <div id="ast-output"></div>
+
+    <script>
+        document.getElementById('create-rule-btn').addEventListener('click', function() {
+            const ruleString = document.getElementById('rule-input').value;
+            fetch(`/api/rule_to_ast/?rule_string=${encodeURIComponent(ruleString)}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    const astOutput = document.getElementById('ast-output');
+                    astOutput.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+                })
+                .catch(error => {
+                    const astOutput = document.getElementById('ast-output');
+                    astOutput.innerHTML = `<pre>Error: ${error.message}</pre>`;
+                });
+        });
+    </script>
+</body>
+</html>

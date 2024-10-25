@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rule Engine</title>
+</head>
+<body>
+    <h1>Rule Engine</h1>
+    <div id="rules-list"></div>
+    <h2>Create a New Rule</h2>
+    <form id="rule-form">
+        <label for="name">Rule Name:</label>
+        <input type="text" id="name" required>
+        <br>
+        <label for="rule_string">Rule (e.g., A AND B):</label>
+        <input type="text" id="rule_string">
+
+    <script>
+        fetch('/api/rules/')
+            .then(response => response.json())
+            .then(data => {
+                const rulesList = document.getElementById('rules-list');
+                data.forEach(rule => {
+                    const div = document.createElement('div');
+                    div.innerHTML = `<strong>${rule.name}</strong>: ${rule.condition} -> ${rule.action}`;
+                    rulesList.appendChild(div);
+                });
+            });
+    </script>
+</body>
+</html>
