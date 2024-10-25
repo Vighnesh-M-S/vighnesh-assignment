@@ -1,6 +1,6 @@
+from django.shortcuts import render
 from django.http import JsonResponse
 from rest_framework import viewsets
-from django.shortcuts import render
 from .models import Rule
 from .serializers import RuleSerializer
 from .ast import Node
@@ -11,7 +11,6 @@ class RuleViewSet(viewsets.ModelViewSet):
 
 def create_rule(rule_string):
     # Basic parsing logic (you can expand this for more complex rules)
-    # For example, "A AND B OR C"
     tokens = rule_string.split()
     root = None
     current = None
@@ -40,7 +39,20 @@ def rule_to_ast(request):
         return JsonResponse({'error': 'No rule string provided.'}, status=400)
 
     ast = create_rule(rule_string)
-    return JsonResponse(ast, safe=False)
+    
+    # Convert the AST to a dictionary for JSON serialization
+    def node_to_dict(node):
+        if node is None:
+            return None
+        return {
+            'type': node.type,
+            'value': node.value,
+            'left': node_to_dict(node.left),
+            'right': node_to_dict(node.right)
+        }
+
+    ast_dict = node_to_dict(ast)
+    return JsonResponse(ast_dict, safe=False)
 
 def index(request):
-    return render(request, 'rules/index2.html')
+    return render(request, 'index2.html')

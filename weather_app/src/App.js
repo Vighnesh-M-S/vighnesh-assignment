@@ -1,4 +1,3 @@
-
 import "./App.css";
 import { useState, useEffect } from "react";
 import axios from 'axios';
@@ -9,19 +8,19 @@ const api = {
 };
 
 const indianMetros = [
-  { id: 1, name: "Delhi" },
-  { id: 2, name: "Mumbai" },
-  { id: 3, name: "Chennai" },
-  { id: 4, name: "Bangalore" },
-  { id: 5, name: "Kolkata" },
-  { id: 6, name: "Hyderabad" },
+  { id: 1, name: "Delhi", lat: 28.6139, lon: 77.2090 },
+  { id: 2, name: "Mumbai", lat: 19.0760, lon: 72.8777 },
+  { id: 3, name: "Chennai", lat: 13.0827, lon: 80.2707 },
+  { id: 4, name: "Bangalore", lat: 12.9716, lon: 77.5946 },
+  { id: 5, name: "Kolkata", lat: 22.5726, lon: 88.3639 },
+  { id: 6, name: "Hyderabad", lat: 17.3850, lon: 78.4867 },
 ];
 
 function App() {
   const [metros, setMetros] = useState(indianMetros);
   const [selectedMetro, setSelectedMetro] = useState(metros[0]);
-  // const [search, setSearch] = useState("");
   const [weather, setWeather] = useState({});
+  const [dailyWeather, setDailyWeather] = useState([]);
   const [unit, setUnit] = useState("celsius");
   const [alert, setAlert] = useState(false);
   const [consecutiveAlerts, setConsecutiveAlerts] = useState(0);
@@ -38,26 +37,26 @@ function App() {
       });
   };
 
-  /*
-    Search button is pressed. Make a fetch call to the Open Weather Map API.
-  */
-  // const searchPressed = () => {
-  //   fetch(`${api.base}weather?q=${search}&units=metric&APPID=${api.key}`)
-  //     .then((res) => res.json())
-  //     .then((result) => {
-  //       setWeather(result);
-  //     });
-  // };
+  const fetchDailyWeather = () => {
+    axios.get(`${api.base}onecall?lat=${selectedMetro.lat}&lon=${selectedMetro.lon}&exclude=hourly,minutely&units=metric&appid=${api.key}`)
+      .then((res) => {
+        setDailyWeather(res.data.daily);
+      })
+      .catch((error) => {
+        console.error(error);
+      });
+  };
 
   useEffect(() => {
-    fetchWeather(); // Initial fetch
+    fetchWeather(); // Initial fetch for current weather
+    fetchDailyWeather(); // Fetch daily weather
     const intervalId = setInterval(fetchWeather, 300000); // Fetch every 5 minutes
     return () => clearInterval(intervalId);
   }, [selectedMetro, threshold]);
 
   const formatDate = (timestamp) => {
     const date = new Date(timestamp * 1000); // Convert from seconds to milliseconds
-    return date.toLocaleString(); // Format date and time
+    return date.toLocaleDateString(); // Format date
   };
 
   const checkThreshold = (currentTemp) => {
@@ -72,8 +71,8 @@ function App() {
     }
   };
 
-   // Function to convert temperature to Kelvin
-   const convertToKelvin = (temp) => {
+  // Function to convert temperature to Kelvin
+  const convertToKelvin = (temp) => {
     return temp + 273.15;
   };
 
@@ -91,10 +90,30 @@ function App() {
     setAlert(false); // Reset alert when threshold is changed
   };
 
+  // Function to calculate daily aggregates
+  const calculateDailySummary = (dailyData) => {
+    return dailyData.map(day => {
+      const avgTemp = (day.temp.max + day.temp.min) / 2;
+      const maxTemp = day.temp.max;
+      const minTemp = day.temp.min;
+      const dominantCondition = day.weather[0].main; // Assuming the first weather condition is the dominant one
+
+      return {
+        date: formatDate(day.dt),
+        avgTemp: avgTemp.toFixed(2),
+        maxTemp,
+        minTemp,
+        dominantCondition,
+      };
+    });
+  };
+
+  // Calculate daily summary when dailyWeather is updated
+  const dailySummary = calculateDailySummary(dailyWeather);
+
   return (
     <div className="App">
       <header className="App-header">
-        {/* HEADER  */}
         <h1>Weather App</h1>
 
         <select
@@ -122,42 +141,50 @@ function App() {
 
         {alert && <p style={{ color: 'red' }}>Alert! Temperature exceeds {threshold}°C!</p>}
 
-        {/* If weather is not undefined display results from API */}
+        {/* Current Weather Info */}
         <div className="weather-info">
-        {typeof weather.main !== "undefined" ? (
+          {typeof weather.main !== "undefined" ? (
+            <div>
+              <p>City: {weather.name}</p>
+              <p>{weather.weather[0].main} ({weather.weather[0].description})</p>
+              <p>
+                Temperature:{" "}
+                {unit === "celsius"
+                  ? `${weather.main.temp}°C`
+                  : `${convertToKelvin(weather.main.temp)} K`}
+                <button onClick={toggleUnit}>
+                  {unit === "celsius" ? "Toggle to Kelvin" : "Toggle to Celsius"}
+                </button>
+              </p>
+              <p>Feels Like: {weather.main.feels_like}°C</p>
+              <p>Last Updated: {formatDate(weather.dt)}</p>
+            </div>
+          ) : (
+            <p>Loading ..</p>
+          )}
+        </div>
+
+        {/* Daily Weather Summary */}
+        <h2>Daily Weather Summary</h2>
+        {dailySummary.length > 0 ? (
           <div>
-            {/* Location  */}
-            <p>City: {weather.name}</p>
-
-            {/* Condition (Sunny ) */}
-            <p>{weather.weather[0].main} ({weather.weather[0].description})</p>
-
-            {/* Temperature Celsius  */}
-            <p>
-              Temperature:{" "}
-              {unit === "celsius"
-                ? `${weather.main.temp}°C`
-                : `${convertToKelvin(weather.main.temp)} K`}
-              <button onClick={toggleUnit}>
-                {unit === "celsius" ? "Toggle to Kelvin" : "Toggle to Celsius"}
-              </button>
-            </p>
-
-            <p>Feels Like: {weather.main.feels_like}°C</p>
-
-            
-            
-
-            <p>Last Updated: {formatDate(weather.dt)}</p>
+            {dailySummary.map((day, index) => (
+              <div key={index} className="weather-summary">
+                <p>Date: {day.date}</p>
+                <p>Average Temperature: {day.avgTemp}°C</p>
+                <p>Maximum Temperature: {day.maxTemp}°C</p>
+                <p>Minimum Temperature: {day.minTemp}°C</p>
+                <p>Dominant Weather Condition: {day.dominantCondition}</p>
+                <hr />
+              </div>
+            ))}
           </div>
         ) : (
-          <p>Loading ..</p>
+          <p>No daily weather data available.</p>
         )}
-        </div>
       </header>
     </div>
   );
 }
 
 export default App;
-
