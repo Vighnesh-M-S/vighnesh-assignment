@@ -51,8 +51,6 @@ The Weather App is a frontend application built with Node.js that displays curre
    ```bash
    cd weather_app
 
-3. Add your weatherApi key.
-
 2. Start the Node.js application:
    ```bash
    npm start
